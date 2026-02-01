@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Paint Together - Watchtower Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      background: #0a0a0a; 
+      color: #fafafa;
+      font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Lobby */
+    #lobby {
+      text-align: center;
+      max-width: 400px;
+      padding: 20px;
+    }
+    #lobby h1 {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+    #lobby .subtitle {
+      color: #71717a;
+      margin-bottom: 32px;
+    }
+    
+    .input-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .input-group label {
+      display: block;
+      font-size: 14px;
+      color: #a1a1aa;
+      margin-bottom: 6px;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 16px;
+      background: #18181b;
+      border: 2px solid #27272a;
+      border-radius: 8px;
+      color: #fafafa;
+    }
+    .input-group input:focus {
+      outline: none;
+      border-color: #10b981;
+    }
+    
+    .color-picker {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .color-option {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.15s;
+    }
+    .color-option:hover {
+      transform: scale(1.1);
+    }
+    .color-option.selected {
+      border-color: white;
+      box-shadow: 0 0 0 2px #10b981;
+    }
+    
+    .btn {
+      background: #10b981;
+      color: #000;
+      border: none;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      margin-top: 8px;
+    }
+    .btn:hover { background: #34d399; }
+    .btn:disabled { background: #27272a; color: #52525b; cursor: not-allowed; }
+    .btn-secondary {
+      background: transparent;
+      border: 2px solid #27272a;
+      color: #a1a1aa;
+    }
+    .btn-secondary:hover { border-color: #10b981; color: #10b981; background: transparent; }
+    
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 20px 0;
+      color: #52525b;
+      font-size: 14px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #27272a;
+    }
+    
+    #join-section {
+      display: none;
+      margin-top: 16px;
+    }
+    #join-section input {
+      text-align: center;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      font-size: 20px;
+    }
+    
+    /* Waiting Room */
+    #waiting {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+    .room-code {
+      font-size: 48px;
+      font-weight: bold;
+      color: #10b981;
+      letter-spacing: 8px;
+      background: #18181b;
+      padding: 16px 32px;
+      border-radius: 12px;
+      border: 2px solid #27272a;
+      margin: 20px 0;
+    }
+    .artists-list {
+      margin: 24px 0;
+    }
+    .artist {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 20px;
+      margin: 4px;
+    }
+    .artist-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .artist-name {
+      font-size: 14px;
+    }
+    .artist.you .artist-name {
+      color: #10b981;
+    }
+    
+    #share-link {
+      font-size: 12px;
+      color: #52525b;
+      margin-top: 16px;
+    }
+    #share-link code {
+      display: block;
+      background: #18181b;
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin-top: 8px;
+      color: #71717a;
+      word-break: break-all;
+    }
+    
+    /* Canvas Area */
+    #canvas-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    .canvas-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 800px;
+      margin-bottom: 12px;
+    }
+    .room-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .room-badge {
+      background: #18181b;
+      border: 1px solid #27272a;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .room-badge code {
+      color: #10b981;
+      font-weight: bold;
+    }
+    .artists-inline {
+      display: flex;
+      gap: 8px;
+    }
+    .artist-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+      color: #000;
+      border: 2px solid #27272a;
+    }
+    
+    #canvas {
+      border: 2px solid #27272a;
+      border-radius: 8px;
+      cursor: crosshair;
+      background: #ffffff;
+    }
+    
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+    
+    .tool-section {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tool-label {
+      font-size: 12px;
+      color: #71717a;
+    }
+    
+    .brush-sizes {
+      display: flex;
+      gap: 4px;
+    }
+    .brush-size {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: #27272a;
+      border: 2px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .brush-size:hover { background: #3f3f46; }
+    .brush-size.selected { border-color: #10b981; }
+    .brush-size span {
+      background: currentColor;
+      border-radius: 50%;
+    }
+    
+    .toolbar-colors {
+      display: flex;
+      gap: 4px;
+    }
+    .toolbar-color {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .toolbar-color:hover { transform: scale(1.1); }
+    .toolbar-color.selected { border-color: white; }
+    
+    .toolbar-btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .toolbar-btn.save {
+      background: #10b981;
+      color: #000;
+    }
+    .toolbar-btn.save:hover { background: #34d399; }
+    .toolbar-btn.load {
+      background: #3b82f6;
+      color: #fff;
+    }
+    .toolbar-btn.load:hover { background: #60a5fa; }
+    .toolbar-btn.clear {
+      background: #27272a;
+      color: #a1a1aa;
+    }
+    .toolbar-btn.clear:hover { background: #3f3f46; }
+    
+    .toolbar-spacer {
+      flex: 1;
+    }
+    
+    /* Remote cursors */
+    .remote-cursor {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1000;
+      transition: all 0.05s linear;
+    }
+    .cursor-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .cursor-name {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #000;
+      font-weight: 500;
+      margin-left: 8px;
+      margin-top: -4px;
+      white-space: nowrap;
+    }
+    
+    /* Toast notifications */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #18181b;
+      border: 1px solid #27272a;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+      z-index: 1000;
+    }
+    .toast.success { border-color: #10b981; color: #10b981; }
+    .toast.show { display: block; animation: fadeInUp 0.3s ease; }
+    
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Lobby -->
+  <div id="lobby">
+    <h1>🎨</h1>
+    <h1>Paint Together</h1>
+    <p class="subtitle">Collaborative canvas • Powered by Watchtower</p>
+    
+    <div class="input-group">
+      <label>Your Name</label>
+      <input type="text" id="name-input" placeholder="Artist name..." maxlength="20" autocomplete="off">
+    </div>
+    
+    <div class="input-group">
+      <label>Pick Your Color</label>
+      <div class="color-picker" id="color-picker">
+        <div class="color-option selected" style="background: #ef4444" data-color="#ef4444"></div>
+        <div class="color-option" style="background: #f97316" data-color="#f97316"></div>
+        <div class="color-option" style="background: #eab308" data-color="#eab308"></div>
+        <div class="color-option" style="background: #22c55e" data-color="#22c55e"></div>
+        <div class="color-option" style="background: #10b981" data-color="#10b981"></div>
+        <div class="color-option" style="background: #06b6d4" data-color="#06b6d4"></div>
+        <div class="color-option" style="background: #3b82f6" data-color="#3b82f6"></div>
+        <div class="color-option" style="background: #8b5cf6" data-color="#8b5cf6"></div>
+        <div class="color-option" style="background: #ec4899" data-color="#ec4899"></div>
+        <div class="color-option" style="background: #000000" data-color="#000000"></div>
+      </div>
+    </div>
+    
+    <button class="btn" onclick="createRoom()">Create Room</button>
+    
+    <div class="divider">or</div>
+    
+    <button class="btn btn-secondary" onclick="showJoinSection()">Join Room</button>
+    
+    <div id="join-section">
+      <div class="input-group">
+        <input type="text" id="code-input" placeholder="ROOM CODE" maxlength="6" autocomplete="off">
+      </div>
+      <button class="btn" onclick="joinRoom()">Join</button>
+    </div>
+  </div>
+  
+  <!-- Waiting Room -->
+  <div id="waiting">
+    <h2>Room Created!</h2>
+    <div class="room-code" id="room-code">------</div>
+    <p style="color: #71717a; margin-bottom: 16px;">Share this code with friends</p>
+    
+    <div class="artists-list" id="artists-list">
+      <!-- Artists will appear here -->
+    </div>
+    
+    <button class="btn" id="start-btn" onclick="startPainting()">Start Painting</button>
+    
+    <div id="share-link">
+      Or share this link:
+      <code id="share-url"></code>
+    </div>
+  </div>
+  
+  <!-- Canvas Area -->
+  <div id="canvas-container">
+    <div class="canvas-header">
+      <div class="room-info">
+        <div class="room-badge">Room: <code id="canvas-room-code"></code></div>
+        <div class="artists-inline" id="artists-inline"></div>
+      </div>
+    </div>
+    
+    <canvas id="canvas" width="800" height="500"></canvas>
+    
+    <div class="toolbar">
+      <div class="tool-section">
+        <span class="tool-label">Brush:</span>
+        <div class="brush-sizes">
+          <button class="brush-size" data-size="3" onclick="setBrushSize(3)"><span style="width:4px;height:4px"></span></button>
+          <button class="brush-size selected" data-size="8" onclick="setBrushSize(8)"><span style="width:8px;height:8px"></span></button>
+          <button class="brush-size" data-size="16" onclick="setBrushSize(16)"><span style="width:14px;height:14px"></span></button>
+          <button class="brush-size" data-size="32" onclick="setBrushSize(32)"><span style="width:20px;height:20px"></span></button>
+        </div>
+      </div>
+      
+      <div class="tool-section">
+        <span class="tool-label">Color:</span>
+        <div class="toolbar-colors" id="toolbar-colors"></div>
+      </div>
+      
+      <div class="toolbar-spacer"></div>
+      
+      <button class="toolbar-btn save" onclick="saveCanvas()">💾 Save</button>
+      <button class="toolbar-btn load" onclick="loadCanvas()">📂 Load</button>
+      <button class="toolbar-btn clear" onclick="clearCanvas()">🗑️ Clear</button>
+    </div>
+  </div>
+  
+  <!-- Remote cursors container -->
+  <div id="cursors"></div>
+  
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import { connect } from 'https://esm.sh/@watchtower-sdk/core@0.5.0'
+
+    // State
+    let room = null
+    let myName = ''
+    let myColor = '#ef4444'
+    let brushSize = 8
+    let isDrawing = false
+    let lastX = 0
+    let lastY = 0
+    const artists = new Map() // playerId -> { name, color }
+    const remoteCursors = new Map() // playerId -> element
+    
+    const canvas = document.getElementById('canvas')
+    const ctx = canvas.getContext('2d')
+    
+    // Initialize canvas
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    
+    // Color picker
+    document.querySelectorAll('.color-option').forEach(el => {
+      el.onclick = () => {
+        document.querySelectorAll('.color-option').forEach(e => e.classList.remove('selected'))
+        el.classList.add('selected')
+        myColor = el.dataset.color
+        updateBrushColor()
+      }
+    })
+    
+    // Expose functions to window
+    window.createRoom = createRoom
+    window.showJoinSection = showJoinSection
+    window.joinRoom = joinRoom
+    window.startPainting = startPainting
+    window.setBrushSize = setBrushSize
+    window.saveCanvas = saveCanvas
+    window.loadCanvas = loadCanvas
+    window.clearCanvas = clearCanvas
+    
+    function showJoinSection() {
+      document.getElementById('join-section').style.display = 'block'
+      document.getElementById('code-input').focus()
+    }
+    
+    function getMyInfo() {
+      myName = document.getElementById('name-input').value.trim() || 'Anonymous'
+      return { name: myName, color: myColor }
+    }
+    
+    async function createRoom() {
+      const info = getMyInfo()
+      const roomId = Math.random().toString(36).substring(2, 8).toUpperCase()
+      await connectToRoom(roomId, info)
+    }
+    
+    async function joinRoom() {
+      const code = document.getElementById('code-input').value.trim().toUpperCase()
+      if (code.length < 4) return alert('Enter a valid room code')
+      const info = getMyInfo()
+      await connectToRoom(code, info)
+    }
+    
+    // Check URL for room code
+    const urlRoom = new URLSearchParams(location.search).get('room')
+    if (urlRoom) {
+      document.getElementById('code-input').value = urlRoom.toUpperCase()
+      showJoinSection()
+    }
+    
+    async function connectToRoom(roomId, info) {
+      try {
+        room = await connect(roomId, {
+          name: info.name,
+          meta: { color: info.color }
+        })
+        
+        // Update URL
+        history.replaceState(null, '', `?room=${roomId}`)
+        
+        // Add self to artists
+        artists.set(room.playerId, { name: info.name, color: info.color })
+        
+        // Add existing players
+        room.players.forEach(p => {
+          if (p.id !== room.playerId) {
+            artists.set(p.id, { 
+              name: p.name || 'Anonymous', 
+              color: p.meta?.color || '#888888' 
+            })
+          }
+        })
+        
+        // Show waiting room
+        document.getElementById('lobby').style.display = 'none'
+        document.getElementById('waiting').style.display = 'block'
+        document.getElementById('room-code').textContent = roomId
+        document.getElementById('share-url').textContent = `${location.origin}${location.pathname}?room=${roomId}`
+        
+        updateArtistsList()
+        setupRoomEvents()
+        
+      } catch (e) {
+        alert('Failed to connect: ' + e.message)
+      }
+    }
+    
+    function setupRoomEvents() {
+      room.on('join', (player) => {
+        artists.set(player.id, { 
+          name: player.name || 'Anonymous', 
+          color: player.meta?.color || '#888888' 
+        })
+        updateArtistsList()
+        showToast(`${player.name || 'Someone'} joined!`)
+      })
+      
+      room.on('leave', (player) => {
+        artists.delete(player.id)
+        removeRemoteCursor(player.id)
+        updateArtistsList()
+        showToast(`${player.name || 'Someone'} left`)
+      })
+      
+      room.on('message', (from, data) => {
+        if (from === room.playerId) return // Ignore own messages
+        
+        if (data.type === 'stroke') {
+          drawStroke(data.points, data.color, data.size)
+        } else if (data.type === 'cursor') {
+          updateRemoteCursor(from, data.x, data.y)
+        } else if (data.type === 'clear') {
+          ctx.fillStyle = '#ffffff'
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+        } else if (data.type === 'start') {
+          // Someone started painting - switch to canvas
+          startPainting()
+        } else if (data.type === 'canvas-sync') {
+          // Load shared canvas state
+          const img = new Image()
+          img.onload = () => ctx.drawImage(img, 0, 0)
+          img.src = data.image
+        }
+      })
+    }
+    
+    function updateArtistsList() {
+      const listEl = document.getElementById('artists-list')
+      const inlineEl = document.getElementById('artists-inline')
+      
+      let listHtml = ''
+      let inlineHtml = ''
+      
+      artists.forEach((artist, id) => {
+        const isYou = id === room.playerId
+        listHtml += `
+          <div class="artist ${isYou ? 'you' : ''}">
+            <div class="artist-color" style="background: ${artist.color}"></div>
+            <span class="artist-name">${artist.name}${isYou ? ' (you)' : ''}</span>
+          </div>
+        `
+        inlineHtml += `
+          <div class="artist-dot" style="background: ${artist.color}" title="${artist.name}">
+            ${artist.name.charAt(0).toUpperCase()}
+          </div>
+        `
+      })
+      
+      listEl.innerHTML = listHtml
+      if (inlineEl) inlineEl.innerHTML = inlineHtml
+    }
+    
+    function startPainting() {
+      document.getElementById('waiting').style.display = 'none'
+      document.getElementById('canvas-container').style.display = 'flex'
+      document.getElementById('canvas-room-code').textContent = room.code
+      
+      updateArtistsList()
+      setupToolbarColors()
+      updateBrushColor()
+      
+      // Tell others we started
+      room.broadcast({ type: 'start' })
+      
+      // Send current canvas to new joiners
+      setTimeout(() => {
+        if (room.isHost) {
+          room.broadcast({ 
+            type: 'canvas-sync', 
+            image: canvas.toDataURL('image/png') 
+          })
+        }
+      }, 500)
+    }
+    
+    function setupToolbarColors() {
+      const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#000000', '#ffffff']
+      const container = document.getElementById('toolbar-colors')
+      
+      container.innerHTML = colors.map(c => `
+        <div class="toolbar-color ${c === myColor ? 'selected' : ''}" 
+             style="background: ${c}; ${c === '#ffffff' ? 'border: 1px solid #27272a' : ''}" 
+             data-color="${c}"
+             onclick="selectToolbarColor('${c}')"></div>
+      `).join('')
+      
+      window.selectToolbarColor = (color) => {
+        myColor = color
+        document.querySelectorAll('.toolbar-color').forEach(el => {
+          el.classList.toggle('selected', el.dataset.color === color)
+        })
+        updateBrushColor()
+      }
+    }
+    
+    function updateBrushColor() {
+      document.querySelectorAll('.brush-size span').forEach(el => {
+        el.style.color = myColor
+        el.style.background = myColor
+      })
+    }
+    
+    function setBrushSize(size) {
+      brushSize = size
+      document.querySelectorAll('.brush-size').forEach(el => {
+        el.classList.toggle('selected', parseInt(el.dataset.size) === size)
+      })
+    }
+    
+    // Drawing
+    let currentStroke = []
+    
+    canvas.addEventListener('mousedown', (e) => {
+      isDrawing = true
+      const rect = canvas.getBoundingClientRect()
+      lastX = e.clientX - rect.left
+      lastY = e.clientY - rect.top
+      currentStroke = [{ x: lastX, y: lastY }]
+    })
+    
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      
+      // Send cursor position
+      if (room) {
+        room.broadcast({ type: 'cursor', x, y })
+      }
+      
+      if (!isDrawing) return
+      
+      // Draw locally
+      ctx.strokeStyle = myColor
+      ctx.lineWidth = brushSize
+      ctx.beginPath()
+      ctx.moveTo(lastX, lastY)
+      ctx.lineTo(x, y)
+      ctx.stroke()
+      
+      currentStroke.push({ x, y })
+      lastX = x
+      lastY = y
+    })
+    
+    canvas.addEventListener('mouseup', () => {
+      if (isDrawing && currentStroke.length > 0 && room) {
+        // Send stroke to others
+        room.broadcast({
+          type: 'stroke',
+          points: currentStroke,
+          color: myColor,
+          size: brushSize
+        })
+      }
+      isDrawing = false
+      currentStroke = []
+    })
+    
+    canvas.addEventListener('mouseleave', () => {
+      if (isDrawing && currentStroke.length > 0 && room) {
+        room.broadcast({
+          type: 'stroke',
+          points: currentStroke,
+          color: myColor,
+          size: brushSize
+        })
+      }
+      isDrawing = false
+      currentStroke = []
+    })
+    
+    function drawStroke(points, color, size) {
+      if (points.length < 2) return
+      
+      ctx.strokeStyle = color
+      ctx.lineWidth = size
+      ctx.beginPath()
+      ctx.moveTo(points[0].x, points[0].y)
+      
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y)
+      }
+      ctx.stroke()
+    }
+    
+    // Remote cursors
+    function updateRemoteCursor(playerId, x, y) {
+      let cursor = remoteCursors.get(playerId)
+      const artist = artists.get(playerId)
+      
+      if (!cursor) {
+        cursor = document.createElement('div')
+        cursor.className = 'remote-cursor'
+        cursor.innerHTML = `
+          <div class="cursor-dot" style="background: ${artist?.color || '#888'}"></div>
+          <div class="cursor-name" style="background: ${artist?.color || '#888'}">${artist?.name || '?'}</div>
+        `
+        document.getElementById('cursors').appendChild(cursor)
+        remoteCursors.set(playerId, cursor)
+      }
+      
+      const rect = canvas.getBoundingClientRect()
+      cursor.style.left = (rect.left + x) + 'px'
+      cursor.style.top = (rect.top + y) + 'px'
+    }
+    
+    function removeRemoteCursor(playerId) {
+      const cursor = remoteCursors.get(playerId)
+      if (cursor) {
+        cursor.remove()
+        remoteCursors.delete(playerId)
+      }
+    }
+    
+    // Save/Load
+    async function saveCanvas() {
+      if (!room) return
+      
+      try {
+        const imageData = canvas.toDataURL('image/png')
+        await room.save('painting', { 
+          image: imageData,
+          savedAt: Date.now(),
+          artists: Array.from(artists.values()).map(a => a.name)
+        })
+        showToast('✓ Painting saved to cloud!', 'success')
+      } catch (e) {
+        showToast('Failed to save: ' + e.message)
+      }
+    }
+    
+    async function loadCanvas() {
+      if (!room) return
+      
+      try {
+        const data = await room.load('painting')
+        if (!data) {
+          showToast('No saved painting found')
+          return
+        }
+        
+        const img = new Image()
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0)
+          showToast('✓ Painting loaded!', 'success')
+          
+          // Share with others
+          room.broadcast({ type: 'canvas-sync', image: data.image })
+        }
+        img.src = data.image
+      } catch (e) {
+        showToast('Failed to load: ' + e.message)
+      }
+    }
+    
+    function clearCanvas() {
+      if (!confirm('Clear the canvas?')) return
+      
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      
+      if (room) {
+        room.broadcast({ type: 'clear' })
+      }
+    }
+    
+    // Toast
+    function showToast(message, type = '') {
+      const toast = document.getElementById('toast')
+      toast.textContent = message
+      toast.className = 'toast show ' + type
+      setTimeout(() => toast.classList.remove('show'), 3000)
+    }
+    
+    // Enter key handlers
+    document.getElementById('name-input').addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') createRoom()
+    })
+    document.getElementById('code-input').addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') joinRoom()
+    })
+    
+    console.log('🎨 Paint Together loaded!')
+  </script>
+</body>
+</html>
