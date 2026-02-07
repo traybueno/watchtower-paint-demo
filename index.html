@@ -601,8 +601,15 @@
       room.on('message', (from, data) => {
         if (from === room.playerId) return // Ignore own messages
         
-        if (data.type === 'stroke') {
-          drawStroke(data.points, data.color, data.size)
+        if (data.type === 'draw') {
+          // Real-time drawing segment
+          ctx.strokeStyle = data.color
+          ctx.lineWidth = data.size
+          ctx.beginPath()
+          ctx.moveTo(data.x1, data.y1)
+          ctx.lineTo(data.x2, data.y2)
+          ctx.stroke()
+          updateRemoteCursor(from, data.x2, data.y2)
         } else if (data.type === 'cursor') {
           updateRemoteCursor(from, data.x, data.y)
         } else if (data.type === 'clear') {
@@ -719,12 +726,11 @@
       const x = e.clientX - rect.left
       const y = e.clientY - rect.top
       
-      // Send cursor position
-      if (room) {
-        room.broadcast({ type: 'cursor', x, y })
+      if (!isDrawing) {
+        // Just cursor when not drawing
+        if (room) room.broadcast({ type: 'cursor', x, y })
+        return
       }
-      
-      if (!isDrawing) return
       
       // Draw locally
       ctx.strokeStyle = myColor
@@ -734,51 +740,31 @@
       ctx.lineTo(x, y)
       ctx.stroke()
       
+      // Broadcast this segment immediately for real-time drawing
+      if (room) {
+        room.broadcast({ 
+          type: 'draw',
+          x1: lastX, y1: lastY,
+          x2: x, y2: y,
+          color: myColor,
+          size: brushSize
+        })
+      }
+      
       currentStroke.push({ x, y })
       lastX = x
       lastY = y
     })
     
     canvas.addEventListener('mouseup', () => {
-      if (isDrawing && currentStroke.length > 0 && room) {
-        // Send stroke to others
-        room.broadcast({
-          type: 'stroke',
-          points: currentStroke,
-          color: myColor,
-          size: brushSize
-        })
-      }
       isDrawing = false
       currentStroke = []
     })
     
     canvas.addEventListener('mouseleave', () => {
-      if (isDrawing && currentStroke.length > 0 && room) {
-        room.broadcast({
-          type: 'stroke',
-          points: currentStroke,
-          color: myColor,
-          size: brushSize
-        })
-      }
       isDrawing = false
       currentStroke = []
     })
-    
-    function drawStroke(points, color, size) {
-      if (points.length < 2) return
-      
-      ctx.strokeStyle = color
-      ctx.lineWidth = size
-      ctx.beginPath()
-      ctx.moveTo(points[0].x, points[0].y)
-      
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i].x, points[i].y)
-      }
-      ctx.stroke()
-    }
     
     // Remote cursors
     function updateRemoteCursor(playerId, x, y) {
