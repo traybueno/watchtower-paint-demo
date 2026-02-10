@@ -382,22 +382,6 @@
       <input type="text" id="name-input" placeholder="Artist name..." maxlength="20" autocomplete="off">
     </div>
     
-    <div class="input-group">
-      <label>Pick Your Color</label>
-      <div class="color-picker" id="color-picker">
-        <div class="color-option selected" style="background: #ef4444" data-color="#ef4444"></div>
-        <div class="color-option" style="background: #f97316" data-color="#f97316"></div>
-        <div class="color-option" style="background: #eab308" data-color="#eab308"></div>
-        <div class="color-option" style="background: #22c55e" data-color="#22c55e"></div>
-        <div class="color-option" style="background: #10b981" data-color="#10b981"></div>
-        <div class="color-option" style="background: #06b6d4" data-color="#06b6d4"></div>
-        <div class="color-option" style="background: #3b82f6" data-color="#3b82f6"></div>
-        <div class="color-option" style="background: #8b5cf6" data-color="#8b5cf6"></div>
-        <div class="color-option" style="background: #ec4899" data-color="#ec4899"></div>
-        <div class="color-option" style="background: #000000" data-color="#000000"></div>
-      </div>
-    </div>
-    
     <button class="btn" onclick="createRoom()">Create Room</button>
     
     <div class="divider">or</div>
@@ -459,8 +443,6 @@
       
       <div class="toolbar-spacer"></div>
       
-      <button class="toolbar-btn save" onclick="saveCanvas()">💾 Save</button>
-      <button class="toolbar-btn load" onclick="loadCanvas()">📂 Load</button>
       <button class="toolbar-btn clear" onclick="clearCanvas()">🗑️ Clear</button>
     </div>
   </div>
@@ -567,14 +549,11 @@
           }
         })
         
-        // Show waiting room
+        // Go directly to canvas
         document.getElementById('lobby').style.display = 'none'
-        document.getElementById('waiting').style.display = 'block'
-        document.getElementById('room-code').textContent = roomId
-        document.getElementById('share-url').textContent = `${location.origin}${location.pathname}?room=${roomId}`
         
-        updateArtistsList()
         setupRoomEvents()
+        startPainting()
         
       } catch (e) {
         alert('Failed to connect: ' + e.message)
